@@ -14,16 +14,7 @@ function handleResetPasswordSubmit(event) {
   // Client validation
   if ($newPass.val().length < 6) {
     event.preventDefault();
-    alert("Password must be at least 6 characters long.");
     $newPass.focus();
-    return;
-  }
-
-  if ($newPass.val() !== $confirmPass.val()) {
-    event.preventDefault();
-    alert("Passwords do not match. Please try again.");
-    $confirmPass.val("");
-    $confirmPass.focus();
     return;
   }
 

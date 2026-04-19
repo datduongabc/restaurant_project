@@ -189,7 +189,6 @@ class AuthController
 
                 if ($result['success']) {
                     unset($_SESSION['email'], $_SESSION['token_verified'], $_SESSION['auth_type']);
-
                     $_SESSION['auth_success'] = "Password changed successfully! Please log in again.";
                     header("Location: index.php?page=signin");
                 } else {

@@ -11,7 +11,7 @@
     <!-- JQuery -->
     <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
     <!-- Custom -->
-    <link rel="stylesheet" href="/restaurant_project/public/css/sign_in.css">
+    <link rel="stylesheet" href="/restaurant_project/public/css/auth/sign_in.css">
     <script src="/restaurant_project/public/js/auth/verify_email.js" defer></script>
 </head>
 

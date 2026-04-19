@@ -23,7 +23,7 @@ class ReservationController
                 $_SESSION['reservation_error'] = $result['message'];
             }
 
-            header("Location: index.php");
+            header("Location: index.php?page=home#reservation");
             exit();
         }
     }

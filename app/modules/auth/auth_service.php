@@ -149,19 +149,9 @@ class AuthService
             ];
         }
 
-        // Mail account verification
-        $is_email_sent = $this->initiateSecureProcess($email, 'EMAIL_VERIFICATION');
-
-        if ($is_email_sent === true) {
-            return [
-                'success' => true,
-                'message' => 'Sign up successful. Check email to verify account.'
-            ];
-        }
-
         return [
             'success' => true,
-            'message' => 'Sign up successful, but we could not send the verification email. Please try again later in your profile.'
+            'message' => 'Sign up successful.'
         ];
     }
 
@@ -326,6 +316,7 @@ class AuthService
         if ($result) {
             $user_data = $this->authModel->getUserRecord($email);
             $this->authModel->deleteToken($user_data['user_record']['id'], $type);
+            $this->authModel->deleteToken($user_data['user_record']['id'], 'REMEMBER_ME');
 
             return [
                 'success' => true,

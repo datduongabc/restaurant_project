@@ -8,8 +8,10 @@
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <!-- JQuery -->
+    <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
     <!-- Custom -->
-    <link rel="stylesheet" href="/restaurant_project/public/css/sign_in.css">
+    <link rel="stylesheet" href="/restaurant_project/public/css/auth/sign_in.css">
     <script src="/restaurant_project/public/js/auth/sign_in.js" defer></script>
 </head>
 
@@ -75,7 +77,7 @@
                                     name="password"
                                     class="form-control"
                                     placeholder="••••••••"
-                                    minlength="6"
+                                    minlength="8"
                                     required>
                             </div>
 

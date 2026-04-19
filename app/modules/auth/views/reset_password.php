@@ -12,7 +12,7 @@
     <!-- JQuery -->
     <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
     <!-- Custom -->
-    <link rel="stylesheet" href="/restaurant_project/public/css/sign_in.css">
+    <link rel="stylesheet" href="/restaurant_project/public/css/auth/sign_in.css">
     <script src="/restaurant_project/public/js/auth/reset_password.js" defer></script>
 </head>
 
@@ -50,7 +50,7 @@
                                     name="new_password"
                                     class="form-control"
                                     placeholder="••••••••"
-                                    minlength="6"
+                                    minlength="8"
                                     required>
                             </div>
                             <div class="mb-4">
@@ -61,7 +61,7 @@
                                     name="confirm_password"
                                     class="form-control"
                                     placeholder="••••••••"
-                                    minlength="6"
+                                    minlength="8"
                                     required>
                             </div>
                             <button type="submit" class="btn btn-primary-custom w-100">Update Password</button>

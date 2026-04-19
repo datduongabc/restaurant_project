@@ -18,7 +18,7 @@ require_once ROOT_PATH . '/app/modules/user/admin_user_controller.php';
 require_once ROOT_PATH . '/app/modules/reservation/admin_reservation_controller.php';
 
 
-$page = $_GET['page'] ?? 'main';
+$page = $_GET['page'] ?? 'home';
 $auth_controller = new AuthController();
 $product_controller = new ProductController();
 $reservation_controller = new ReservationController();
@@ -32,7 +32,7 @@ $admin_reservation = new AdminReservationController();
 $auth_controller->signInWithToken();
 
 // Reservation
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'main') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $page === 'home') {
     $reservation_controller->createReservation();
 }
 
@@ -92,7 +92,7 @@ switch ($page) {
         include __DIR__ . '/api/search.php';
         exit();
 
-    case 'main':
+    case 'home':
     default:
         if (isset($_SESSION['role']) && ($_SESSION['role'] === 'CUSTOMER')) {
             include ROOT_PATH . '/app/modules/user/views/customer_page.php'; // For customer

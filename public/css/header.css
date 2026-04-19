@@ -24,15 +24,7 @@
 }
 
 .navbar-nav .nav-link::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: 0;
-  left: 50%;
-  background-color: var(--primary-orange);
-  transition: var(--transition);
-  transform: translateX(-50%);
+  display: none !important;
 }
 
 .navbar-nav .nav-link:hover::after,
