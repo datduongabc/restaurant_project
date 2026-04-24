@@ -11,7 +11,7 @@ class AuthController
         $this->authService = new AuthService();
     }
 
-    // Sign up controller
+    // Sign up
     public function signUp()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,7 +36,7 @@ class AuthController
         require_once ROOT_PATH . '/app/modules/auth/views/sign_up.php';
     }
 
-    // Sign in controller
+    // Sign in
     public function signIn()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -91,7 +91,7 @@ class AuthController
         }
     }
 
-    // Sign out controller
+    // Sign out
     public function signOut()
     {
         if (isset($_COOKIE['remember_me'])) {
@@ -105,16 +105,20 @@ class AuthController
         exit();
     }
 
-    // Forgot password controller
+    // Forgot password
     public function forgotPassword()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = trim($_POST['email'] ?? '');
-            $type = 'FORGOT_PASSWORD';
-            $this->authService->initiateSecureProcess($email, $type);
 
-            $_SESSION["email"] = $email;
-            $_SESSION["auth_type"] = 'FORGOT_PASSWORD';
+            $result = $this->authService->initiateSecureProcess($email, 'FORGOT_PASSWORD');
+
+            if (!$result) {
+                $_SESSION['auth_error'] = $result['message'];
+            } else {
+                $_SESSION["email"] = $email;
+                $_SESSION["auth_type"] = 'FORGOT_PASSWORD';
+            }
 
             // Success or unsuccess, redirect to input secure token page
             header("Location: index.php?page=secure_token");
@@ -127,41 +131,44 @@ class AuthController
 
     public function secureToken()
     {
+        if (!isset($_SESSION['email']) || !isset($_SESSION['auth_type'])) {
+            header("Location: index.php?page=forgot_password");
+            exit();
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = $_SESSION["email"] ?? '';
             $type = $_SESSION["auth_type"] ?? '';
+            $plain_token = $_POST['secure_token'] ?? '';
 
-            if (empty($email) || empty($type)) {
+            $result = $this->authService->validateToken($email, $plain_token, $type);
+
+            if ($result["message"] === "Too many attempts.") {
                 header("Location: index.php?page=forgot_password");
                 exit();
             }
 
-            $plain_token = $_POST['secure_token'] ?? '';
-
-            $result = $this->authService->validateTokenStep($email, $plain_token, $type);
-
             if (!$result["success"]) {
                 $_SESSION['auth_error'] = $result['message'];
-
-                if ($result["message"] === "Too many attempts.") {
-                    header("Location: index.php?page=forgot_password");
-                    exit();
-                }
-
                 header("Location: index.php?page=secure_token");
+                exit();
             } else {
                 $_SESSION['token_verified'] = true;
 
                 if ($type === 'EMAIL_VERIFICATION') {
                     $this->authService->verifyEmailLogic($email);
-                    unset($_SESSION['email'], $_SESSION['token_verified'], $_SESSION['auth_type']);
-                    $_SESSION['auth_success'] = "Email verified! You can now enjoy full features.";
-                    header("Location: index.php");
-                } else {
-                    header("Location: index.php?page=reset_password");
+
+                    if ($result['success']) {
+                        $_SESSION['is_email_verified'] = 1;
+                        unset($_SESSION['email'], $_SESSION['auth_type'], $_SESSION['token_verified']);
+                        $_SESSION['auth_success'] = "Email verified.";
+                        header("Location: index.php");
+                    } else {
+                        header("Location: index.php?page=reset_password");
+                    }
                 }
+                exit();
             }
-            exit();
         }
 
         // GET Method: Display the secure token form
@@ -170,31 +177,25 @@ class AuthController
 
     public function resetPassword()
     {
-        if (!isset($_SESSION['token_verified']) || !isset($_SESSION['email'])) {
+        if (!isset($_SESSION['email']) || !isset($_SESSION['auth_type']) || !isset($_SESSION['token_verified'])) {
             header("Location: index.php?page=forgot_password");
             exit();
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = $_SESSION['email'];
+            $type = $_SESSION['auth_type'] ?? '';
             $new_password = $_POST['new_password'] ?? '';
-            $confirm_password = $_POST['confirm_password'] ?? '';
 
-            if ($new_password !== $confirm_password) {
-                $_SESSION['auth_error'] = "Passwords do not match.";
-                header("Location: index.php?page=reset_password");
+            $result = $this->authService->createNewPassword($email, $new_password, $type);
+
+            if ($result['success']) {
+                unset($_SESSION['email'], $_SESSION['auth_type'], $_SESSION['token_verified']);
+                $_SESSION['auth_success'] = "Please log in again.";
+                header("Location: index.php?page=signin");
             } else {
-                $type = $_SESSION['auth_type'] ?? 'FORGOT_PASSWORD';
-                $result = $this->authService->createNewPassword($email, $new_password, $type);
-
-                if ($result['success']) {
-                    unset($_SESSION['email'], $_SESSION['token_verified'], $_SESSION['auth_type']);
-                    $_SESSION['auth_success'] = "Password changed successfully! Please log in again.";
-                    header("Location: index.php?page=signin");
-                } else {
-                    $_SESSION['auth_error'] = $result['message'];
-                    header("Location: index.php?page=reset_password");
-                }
+                $_SESSION['auth_error'] = $result['message'];
+                header("Location: index.php?page=reset_password");
             }
             exit();
         }
@@ -205,22 +206,12 @@ class AuthController
     public function changePassword()
     {
         if (!isset($_SESSION['user_id'])) {
-            $_SESSION['auth_error'] = "Vui lòng đăng nhập để thực hiện chức năng này.";
+            $_SESSION['auth_error'] = "Can not change password without login";
             header("Location: index.php?page=signin");
             exit();
         }
 
-        $user_id = $_SESSION['user_id'];
-
-        $user_result = $this->authService->getUserInfoById($user_id);
-        $email = $user_result['email'] ?? '';
-
-        if (empty($email)) {
-            $_SESSION['auth_error'] = "Không tìm thấy thông tin email.";
-            header("Location: index.php");
-            exit();
-        }
-
+        $email = $this->authService->getUserInfoById($_SESSION['user_id'])['email'];
         $this->authService->initiateSecureProcess($email, 'CHANGE_PASSWORD');
 
         $_SESSION["email"] = $email;
@@ -232,25 +223,24 @@ class AuthController
 
     public function verifyEmailRequest()
     {
-        // 1. Kiểm tra session cơ bản
         if (!isset($_SESSION['user_id'])) {
             header("Location: index.php?page=signin");
             exit();
         }
 
-        $user = $this->authService->getUserInfoById($_SESSION['user_id']);
-        $email = $user['email'] ?? '';
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $email = $this->authService->getUserInfoById($_SESSION['user_id'])['email'];
             $result = $this->authService->initiateSecureProcess($email, 'EMAIL_VERIFICATION');
 
-            if ($result === true) {
+            if ($result) {
                 $_SESSION['email'] = $email;
                 $_SESSION['auth_type'] = 'EMAIL_VERIFICATION';
+
                 header("Location: index.php?page=secure_token");
                 exit();
             } else {
-                $_SESSION['auth_error'] = is_array($result) ? $result['message'] : "Could not send email. Please try again.";
+                $_SESSION['auth_error'] = $result["message"];
+
                 header("Location: index.php?page=verify_email");
                 exit();
             }

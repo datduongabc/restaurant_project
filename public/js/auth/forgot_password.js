@@ -1,31 +1,28 @@
 $(function () {
-  const $forgotPasswordForm = $("#forgotPasswordForm");
-
-  if ($forgotPasswordForm.length) {
-    $forgotPasswordForm.on("submit", handleForgotPasswordSubmit);
+  const $form = $("#forgotPasswordForm");
+  if ($form.length) {
+    $form.on("submit", handleForgotPasswordSubmit);
   }
 });
 
 function handleForgotPasswordSubmit(event) {
   const $email = $("#email");
   const emailVal = $email.val().trim();
-  const $submitBtn = $(this).find('button[type="submit"]');
+  const $btn = $(this).find('button[type="submit"]');
 
-  // Client validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(emailVal)) {
     event.preventDefault();
     alert("Please enter a valid email address.");
     $email.focus();
-    return;
+    return false;
   }
 
-  // Lock button preventing spamming
-  if ($submitBtn.length) {
-    $submitBtn.css("width", $submitBtn.outerWidth() + "px");
-    $submitBtn.prop("disabled", true);
-    $submitBtn.html(
-      '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Sending...',
-    );
-  }
+  showLoading($btn, "Sending...");
+}
+
+function showLoading($btn, text) {
+  $btn
+    .prop("disabled", true)
+    .html(`<span class="spinner-border spinner-border-sm me-2"></span>${text}`);
 }

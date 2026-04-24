@@ -103,10 +103,29 @@ class AuthService
             ];
         }
 
-        if (strlen($password) < 6) {
+        // checking unique email and phone number
+        $duplicate = $this->authModel->checkDuplicateInfo($email, $phone);
+
+        if ($duplicate) {
+            if ($duplicate['email'] === $email) {
+                return [
+                    'success' => false,
+                    'message' => 'Email already registered.'
+                ];
+            }
+
+            if ($duplicate['phone'] === $phone) {
+                return [
+                    'success' => false,
+                    'message' => 'Phone already registered.'
+                ];
+            }
+        }
+
+        if (strlen($password) < 8) {
             return [
                 'success' => false,
-                'message' => 'Password must be at least 6 characters long.'
+                'message' => 'Password must be at least 8 characters long.'
             ];
         }
 
@@ -115,23 +134,6 @@ class AuthService
                 'success' => false,
                 'message' => 'Invalid phone number.'
             ];
-        }
-
-        // checking unique email and phone number
-        $duplicate = $this->authModel->checkDuplicateInfo($email, $phone);
-        if ($duplicate) {
-            if ($duplicate['email'] === $email) {
-                return [
-                    'success' => false,
-                    'message' => 'Email already registered.'
-                ];
-            }
-            if ($duplicate['phone'] === $phone) {
-                return [
-                    'success' => false,
-                    'message' => 'Phone already registered.'
-                ];
-            }
         }
 
         // create and save new user in database
@@ -145,7 +147,7 @@ class AuthService
         if (!$create_user) {
             return [
                 'success' => false,
-                'message' => 'Sign up unsuccessful.'
+                'message' => 'Internal server error. Please try again.'
             ];
         }
 
@@ -166,16 +168,14 @@ class AuthService
             ];
         }
 
-        if (strlen($password) < 6) {
+        if (strlen($password) < 8) {
             return [
                 'success' => false,
-                'message' => 'Password must be at least 6 characters long.'
+                'message' => 'Password must be at least 8 characters long.'
             ];
         }
 
-        // Check user exist?
-        $db_result = $this->authModel->getUserRecord($email);
-        $user = $db_result['user_record'];
+        $user = $this->authModel->getUserRecord($email)['user_record'];
 
         // incorrect email or verify password not match
         if (!$user || !password_verify($password, $user["password"])) {
@@ -198,21 +198,14 @@ class AuthService
         ];
     }
 
-    public function initiateSecureProcess($email, $type)
+    public function rememberMeLogic($user_id)
     {
-        $user = $this->authModel->getUserRecord($email);
-        if (!$user['user_record']) {
-            return [
-                'success' => false,
-                "message" => "If email found. Secure token will send to your email."
-            ];
-        }
-
         $plain_token = bin2hex(random_bytes(32));
-        $hash_token = password_hash($plain_token, PASSWORD_DEFAULT);
+        $hash_token = hash('sha256', $plain_token);
 
-        $this->authModel->saveTokenData($user["user_record"]["id"], $hash_token, $type, self::TTL_SECURE_TOKEN);
-        return $this->sendUniversalEmail($email, $plain_token, $type);
+        $this->authModel->saveTokenData($user_id, $hash_token, 'REMEMBER_ME', self::TTL_REMEMBER_TOKEN);
+
+        setcookie('remember_me', $plain_token, time() + (7 * 24 * 60 * 60), "/", "", false, true);
     }
 
     public function signInWithToken($plain_token)
@@ -222,7 +215,11 @@ class AuthService
 
         if (!$user["success"]) {
             setcookie('remember_me', '', time() - 3600, "/");
-            return ['success' => false];
+
+            return [
+                'success' => false,
+                'message' => 'Please login again.'
+            ];
         }
 
         return [
@@ -230,7 +227,7 @@ class AuthService
             "userInfo" => [
                 'id' => $user["user_record"]['id'],
                 'name' => $user["user_record"]['name'],
-                'role' => $user['role'],
+                'role' => $user["user_record"]['role'],
                 'is_email_verified' => $user["user_record"]['is_email_verified']
 
             ],
@@ -238,31 +235,84 @@ class AuthService
         ];
     }
 
-    public function validateTokenStep($email, $plain_token, $type)
+    public function revokeToken($cookie_token)
     {
-        $db_result = $this->authModel->getUserRecord($email);
-        $user = $db_result['user_record'];
+        $hash = hash('sha256', $cookie_token);
+
+        $result = $this->authModel->deleteTokenByValue($hash, 'REMEMBER_ME');
+
+        if (!$result) {
+            return [
+                "success" => false,
+                "message" => "Internal server error."
+            ];
+        }
+
+        return [
+            "success" => true,
+            "message" => "Logged out successfully."
+        ];
+    }
+
+    public function initiateSecureProcess($email, $type)
+    {
+        // Server validation
+        if (empty($email) || empty($type)) {
+            return [
+                'success' => false,
+                'message' => 'Please enter all fields.'
+            ];
+        }
+
+        $user = $this->authModel->getUserRecord($email);
+
+        if (!$user['user_record']) {
+            return [
+                'success' => false,
+                "message" => "If email found. Secure token will send to your email."
+            ];
+        }
+
+        $plain_token = bin2hex(random_bytes(32));
+        $hash_token = hash('sha256', $plain_token);
+
+        $save_token = $this->authModel->saveTokenData($user["user_record"]["id"], $hash_token, $type, self::TTL_SECURE_TOKEN);
+
+        if (!$save_token) {
+            return [
+                "success" => false,
+                "message" => "Internal server error."
+            ];
+        }
+
+        return $this->sendUniversalEmail($email, $plain_token, $type);
+    }
+
+    public function validateToken($email, $plain_token, $type)
+    {
+        $user = $this->authModel->getUserRecord($email)['user_record'];
 
         if (!$user) {
             return [
                 'success' => false,
-                'message' => 'User not found.'
+                'message' => 'User does not found.'
             ];
         }
 
         $attempts_data = $this->authModel->getAttempts($user['id'], $type);
 
-        if ($attempts_data >= self::MAX_ATTEMPTS) {
+        if ($attempts_data['attempts'] >= self::MAX_ATTEMPTS) {
             return [
                 'success' => false,
                 'message' => 'Too many attempts.'
             ];
         }
 
-        $db_token = $this->authModel->getValidToken($user['id'], $type);
+        $result = $this->authModel->getValidToken($user['id'], $type);
 
-        if (!$db_token || !password_verify($plain_token, $db_token['token'])) {
+        if (!$result || hash('sha256', $plain_token) !== $result['token']) {
             $this->authModel->incrementAttempts($user['id'], $type);
+
             return [
                 'success' => false,
                 'message' => 'Invalid or expired token.'
@@ -275,76 +325,61 @@ class AuthService
         ];
     }
 
-    // forgot password logic
-
-
     public function verifyEmailLogic($email)
     {
         $result = $this->authModel->verifyEmail($email);
-        if ($result) {
-            $user_data = $this->authModel->getUserRecord($email);
-            $this->authModel->deleteToken($user_data['user_record']['id'], 'EMAIL_VERIFICATION');
-            $_SESSION['is_email_verified'] = 1;
-            return ['success' => true];
+
+        if (!$result) {
+            return [
+                'success' => false,
+                "message" => "Internal server error."
+            ];
         }
-        return ['success' => false];
-    }
 
-    public function rememberMeLogic($user_id)
-    {
-        $plain_token = bin2hex(random_bytes(32));
-        $hash_token = hash('sha256', $plain_token);
+        $user_data = $this->authModel->getUserRecord($email);
 
-        $this->authModel->saveTokenData($user_id, $hash_token, 'REMEMBER_ME', self::TTL_REMEMBER_TOKEN);
+        $this->authModel->deleteToken($user_data['user_record']['id'], 'EMAIL_VERIFICATION');
 
-        // HttpOnly cookie cho bảo mật
-        setcookie('remember_me', $plain_token, time() + (7 * 24 * 60 * 60), "/", "", false, true);
+        return [
+            'success' => true,
+            "message" => "Verify email successfully."
+        ];
     }
 
     public function createNewPassword($email, $new_password, $type)
     {
-        if (strlen($new_password) < 6) {
+        if (strlen($new_password) < 8) {
             return [
                 'success' => false,
-                'message' => 'Password must be at least 6 characters.'
+                'message' => 'Password must be at least 8 characters.'
             ];
         }
 
         $hash_password = password_hash($new_password, PASSWORD_DEFAULT);
+
         $result = $this->authModel->updatePassword($email, $hash_password);
 
-        if ($result) {
-            $user_data = $this->authModel->getUserRecord($email);
-            $this->authModel->deleteToken($user_data['user_record']['id'], $type);
-            $this->authModel->deleteToken($user_data['user_record']['id'], 'REMEMBER_ME');
-
+        if (!$result) {
             return [
-                'success' => true,
-                'message' => 'Password updated successfully.'
+                'success' => false,
+                'message' => 'Failed to update password.'
             ];
         }
 
-        return [
-            'success' => false,
-            'message' => 'Failed to update password.'
-        ];
-    }
+        $user_record = $this->authModel->getUserRecord($email);
 
-    public function revokeToken($cookie_token)
-    {
-        // Remember me dùng sha256 như đã chốt ở login
-        $hash = hash('sha256', $cookie_token);
-        $result = $this->authModel->deleteTokenByValue($hash, 'REMEMBER_ME');
+        $this->authModel->deleteToken($user_record['user_record']['id'], $type);
+        $this->authModel->deleteToken($user_record['user_record']['id'], 'REMEMBER_ME');
 
         return [
-            "success" => $result,
-            "message" => $result ? "Logged out from this device." : "Failed to revoke session."
+            'success' => true,
+            'message' => 'Password updated successfully.'
         ];
     }
 
     public function getUserInfoById($id)
     {
         $result = $this->authModel->getUserById($id);
-        return $result['user_record']; // Trả về mảng user hoặc null
+        return $result['user_record'];
     }
 }

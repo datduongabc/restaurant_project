@@ -17,8 +17,8 @@ require_once ROOT_PATH . '/app/modules/product/admin_product_controller.php';
 require_once ROOT_PATH . '/app/modules/user/admin_user_controller.php';
 require_once ROOT_PATH . '/app/modules/reservation/admin_reservation_controller.php';
 
+$page = $_GET['page'] ?? '';
 
-$page = $_GET['page'] ?? 'home';
 $auth_controller = new AuthController();
 $product_controller = new ProductController();
 $reservation_controller = new ReservationController();

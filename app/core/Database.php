@@ -8,12 +8,11 @@ class Database
 
     private function __construct()
     {
-        // Đọc thông tin từ config/database.php
         $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // debug
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // trả về mảng
-            PDO::ATTR_EMULATE_PREPARES   => false, // chống SQL injection
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, // return array
+            PDO::ATTR_EMULATE_PREPARES   => false, // prevent SQL injection
         ];
 
         try {

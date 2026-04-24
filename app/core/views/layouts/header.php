@@ -1,7 +1,7 @@
 <header>
     <nav class="navbar navbar-expand-lg shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="?page=home">
+            <a class="navbar-brand fw-bold" href="index.php">
                 <span class="text-primary-orange">DaT</span><span class="text-teal-dark">eNO</span>
             </a>
 
@@ -15,10 +15,10 @@
 
             <div class="collapse navbar-collapse" id="navbarContent">
                 <ul class="navbar-nav mb-2 mb-lg-0 ms-lg-2 align-items-center fw-semibold">
-                    <li class="nav-item"><a class="nav-link" href="?page=home">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?page=home#menu-list">Menu</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?page=home#feedback">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="?page=home#reservation">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.php">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.php#menu-list">Menu</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.php#feedback">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="index.php#reservation">Contact</a></li>
                 </ul>
 
                 <div class="search-wrapper flex-grow-1 position-relative mx-lg-3 my-lg-auto mx-lg-5">

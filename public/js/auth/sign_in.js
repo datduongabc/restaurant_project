@@ -1,23 +1,32 @@
-/* 3. Main functions */
 $(function () {
   const $signinForm = $("#signinForm");
+  const $toggleIcon = $("#togglePasswordIcon");
 
+  // Event Bindings
   if ($signinForm.length) {
     $signinForm.on("submit", handleSigninSubmit);
   }
+
+  if ($toggleIcon.length) {
+    $toggleIcon.on("click", togglePasswordVisibility);
+  }
 });
 
-/* 4. Helper functions */
 function handleSigninSubmit(event) {
   const $password = $("#password");
   const passwordInput = $password.val();
-  const $submitBtn = $(this).find('button[type="submit"]');
 
-  // Client validation
-  if (passwordInput.length < 6) {
+  if (passwordInput.length < 8) {
     event.preventDefault();
-    alert("Password must be at least 6 characters long.");
+    alert("Password must be at least 8 characters long.");
     $password.focus();
-    return;
+    return false;
   }
+}
+
+function togglePasswordVisibility() {
+  const $passwordInput = $("#password");
+  const isPassword = $passwordInput.attr("type") === "password";
+  $passwordInput.attr("type", isPassword ? "text" : "password");
+  $(this).toggleClass("fa-eye fa-eye-slash");
 }

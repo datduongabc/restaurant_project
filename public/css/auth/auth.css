@@ -4,31 +4,41 @@
   --primary-orange: #ff7a00;
   --teal-dark: #004d4d;
   --soft-cyan: #e6f2f2;
+  --border-color: #edf2f7;
+  --text-main: #2d3748;
 }
 
 body {
   font-family: "Montserrat", sans-serif;
   background: linear-gradient(135deg, var(--soft-cyan) 0%, #ffffff 100%);
+  color: var(--text-main);
+  margin: 0;
 }
 
-/* Vertically centered */
-.signin-wrapper {
+.auth-wrapper {
   min-height: 100vh;
   display: flex;
   align-items: center;
+  padding: 20px 0;
 }
 
-/* Custom Card */
-.signin-card {
+.auth-card {
+  background: #ffffff;
   border-radius: 24px;
   padding: 40px;
-  background-color: #ffffff;
+  border: none;
   box-shadow: 0 15px 40px rgba(0, 77, 77, 0.08) !important;
 }
 
-/* Form Controls */
+/* 4. Form Inputs */
+.form-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
 .form-control {
-  border: 2px solid #edf2f7;
+  border: 2px solid var(--border-color);
   border-radius: 12px;
   padding: 12px 16px;
   transition: all 0.3s ease;
@@ -37,27 +47,14 @@ body {
 .form-control:focus {
   border-color: var(--teal-dark);
   box-shadow: 0 0 0 3px rgba(0, 77, 77, 0.1);
+  outline: none;
 }
 
-/* Checkbox Custom */
-.form-check-input {
-  cursor: pointer;
-  border: 2px solid #edf2f7;
-}
-
-.form-check-input:checked {
-  background-color: var(--teal-dark);
-  border-color: var(--teal-dark);
-}
-
-.form-check-label {
-  cursor: pointer;
-}
-
-/* Custom Button */
-.btn-primary-custom {
+/* 5. Custom Button */
+.btn-auth {
   background-color: var(--primary-orange);
   color: white;
+  border: none;
   border-radius: 12px;
   padding: 14px;
   font-weight: 700;
@@ -66,19 +63,36 @@ body {
   transition: all 0.3s ease;
 }
 
-.btn-primary-custom:hover {
+.btn-auth:hover {
   background-color: var(--teal-dark);
   color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 77, 77, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 77, 77, 0.15);
 }
 
-/* Links */
-.signin-link {
+/* 6. Links */
+.auth-link {
   color: var(--primary-orange);
-  transition: color 0.3s ease;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.3s;
 }
 
-.signin-link:hover {
+.auth-link:hover {
   color: var(--teal-dark);
+}
+
+/* 7. Password Toggle */
+.password-field {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #a0aec0;
+  z-index: 10;
 }
